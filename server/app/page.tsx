@@ -3,6 +3,7 @@ import { useRef } from 'react';
 
 import Editor, { OnMount } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
+/* @ts-ignore */
 import { constrainedEditor } from 'constrained-editor-plugin';
 // The initial code loaded into the editor
 const defaultCode = [
@@ -15,6 +16,8 @@ const defaultCode = [
 ].join('\n');
 
 export default function App() {
+
+  let restrictions = [];
   const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
 
   const handleEditorDidMount: OnMount = (editor, monaco) => {
@@ -23,10 +26,14 @@ export default function App() {
     const constrainedInstance = constrainedEditor(monaco);
     const model = editor.getModel();
     constrainedInstance.initializeIn(editor);
+
+    /* @ts-ignore */
     restrictions.push({
       range: [1, 1, 2, 10],
       allowMultiline: true
     });
+
+    /* @ts-ignore */
     constrainedInstance.addRestrictionsTo(model, restrictions);
   }
 
