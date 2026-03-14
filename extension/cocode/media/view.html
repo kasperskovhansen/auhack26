@@ -2,20 +2,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+
+<!-- and it's easy to individually load additional languages -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/go.min.js"></script>
+
+
 <style>
     body {
-        padding: 8px;
+        padding: 16px;
+        padding-top: 0px;
         display: flex;
         flex-direction: column;
         gap: 6px;
-    }
-    input {
-        width: 100%;
-        background: var(--vscode-input-background);
-        color: var(--vscode-input-foreground);
-        border: 1px solid var(--vscode-input-border);
-        padding: 4px 6px;
-        box-sizing: border-box;
     }
     button {
         background: var(--vscode-button-background);
@@ -94,7 +95,7 @@
 <link href="{{CODEICONS_URI_MAGICAL_STRING}}" rel="stylesheet"/>
 </head>
 <body>
-    <p>Session code: <span id="session-code-value"></span></p>
+    <h2>Session code: <a id="session-code-value"></a></h2>
 
     <div id="answer-container">
         
@@ -103,9 +104,7 @@
 
     <template id="answer-template">
         <div class="answer">
-            <div class="answer-code">
-
-            </div>
+            <pre><code class="answer-code"></code></pre>
             <div class="answer-check-icon">
                 <i class="codicon codicon-check"></i>
             </div>
@@ -138,7 +137,10 @@
         })
 
         if (event.data.command === 'setSessionCode') {
-            document.getElementById('session-code-value').textContent = event.data.text;
+            const element = document.getElementById('session-code-value');
+            element.textContent = event.data.text;
+            element.href = `https://cocode.kasperskov.dev/answers?code=${event.data.text}`;
+
         } else if (event.data.command === "updateAnswers") {
             answers = event.data.answers
         
@@ -152,8 +154,10 @@
             const container = document.querySelector('#answer-container')
             container.innerHTML = ""
             elements.forEach(elm => container.appendChild(elm))
+            hljs.highlightAll();
         }
     });
+
 </script>
 </body>
 </html>

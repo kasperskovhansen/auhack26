@@ -81,6 +81,7 @@
   },
   "dependencies": {
     "@vscode/codicons": "^0.0.45",
+    "highlight.js": "^11.11.1",
     "vscode-position-tracking": "^0.1.0"
   }
 }
