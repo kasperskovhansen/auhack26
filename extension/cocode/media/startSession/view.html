@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<style>
+    body {
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    input {
+        width: 100%;
+        background: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border: 1px solid var(--vscode-input-border);
+        padding: 4px 6px;
+        box-sizing: border-box;
+    }
+    button {
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        padding: 6px;
+        cursor: pointer;
+        width: 100%;
+    }
+    button:hover {
+        background: var(--vscode-button-hoverBackground);
+    }
+    #session-code {
+        color: var(--vscode-descriptionForeground);
+        font-size: 12px;
+    }
+</style>
+</head>
+<body>
+    <h3>To create a new session press the button</h3>
+    <button id="start-session-btn">Start Session</button>
+    <div id="session-code" style="display: none;">
+        <h3 id="session-code-text">Found existing session with code: </h3>
+        <button id="rejoin-session-btn">Rejoin Session</button>
+    </div>
+<script>
+    const vscode = acquireVsCodeApi();
+    // Listen for label updates from the extension
+    window.addEventListener('message', (event) => {
+        const { command, text } = event.data;
+        if (command === 'setSessionCode') {
+            document.getElementById('session-code').style.display = 'block';
+            document.getElementById('session-code-text').textContent = `Found existing session with code: ${text}`;
+        }
+    });
+
+    document.getElementById('start-session-btn')
+            .addEventListener('click', () => {
+        vscode.postMessage({ command: 'StartSession' });
+    });
+
+    document.getElementById('rejoin-session-btn')
+            .addEventListener('click', () => {
+        vscode.postMessage({ command: 'RejoinSession' });
+    });
+</script>
+</body>
+</html>

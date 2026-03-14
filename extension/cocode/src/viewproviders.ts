@@ -4,14 +4,40 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { Answer } from './types';
 
-export class StartSessionViewProvider implements vscode.TreeDataProvider<string> {
-  getTreeItem(element: string): vscode.TreeItem {
-    return new vscode.TreeItem(element);
+export class StartSessionViewProvider implements vscode.WebviewViewProvider {
+  private _view?: vscode.WebviewView;
+  private html: string;
+  private sessionCode: number | null;
+  constructor(htmlPath: string, sessionCode: number | null) {
+    this.html = fs.readFileSync(htmlPath, 'utf-8');
+    this.sessionCode = sessionCode;
   }
 
-  getChildren(): Thenable<string[]> {
-    return Promise.resolve([]);
+  resolveWebviewView(webviewView: vscode.WebviewView) {
+    this._view = webviewView;
+
+    webviewView.webview.options = { enableScripts: true };
+    webviewView.webview.html = this._getHtml();
+
+    webviewView.webview.postMessage({ command: 'setSessionCode', text: this.sessionCode });
+
+    // Handle messages sent from the webview
+    webviewView.webview.onDidReceiveMessage((message) => {
+      if (message.command === 'StartSession') {
+        console.log(`Tried to start sessoin`);
+        vscode.commands.executeCommand('cocode.startSession');
+      }
+      else if (message.command === 'RejoinSession') {
+        vscode.commands.executeCommand('cocode.rejoinSession');
+      }
+    });
+    
   }
+
+  private _getHtml(): string {
+    return this.html;
+  }
+
 }
 
 export class MyPanelViewProvider implements vscode.WebviewViewProvider {
@@ -34,7 +60,7 @@ export class MyPanelViewProvider implements vscode.WebviewViewProvider {
 
     // Handle messages sent from the webview
     webviewView.webview.onDidReceiveMessage((message) => {
-      if (message.command === 'submit') {
+      if (message.command === 'StartSession') {
         vscode.window.showInformationMessage(`Input: ${message.value}`);
       } else if (message.command === 'debug') {
         vscode.window.showInformationMessage(`[WEBVIEW DEBUG]: ${message.msg}`);

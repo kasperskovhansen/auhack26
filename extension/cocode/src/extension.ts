@@ -11,12 +11,16 @@ export function activate(context: vscode.ExtensionContext) {
   console.log("CoCode started");
 
   const previousId = context.workspaceState.get("cocodeSessionId", null);
-  vscode.commands.executeCommand('setContext', 'cocode.showRejoin', previousId !== null); 
-  
-  const startSessionProvider = new StartSessionViewProvider();
+  const previousCode = context.workspaceState.get("cocodeSessionCode", null);
+
+  const oldSessionExists = previousId !== null && previousCode !== null;
+  vscode.commands.executeCommand('setContext', 'cocode.showRejoin', oldSessionExists); 
+
+  const startSessionPath = path.join(context.extensionPath, 'media', 'startSession', 'view.html');
+  const startSessionProvider = new StartSessionViewProvider(startSessionPath, oldSessionExists ? previousCode : null);
 
   context.subscriptions.push(
-    vscode.window.registerTreeDataProvider('cocodeCreateSession', startSessionProvider)
+    vscode.window.registerWebviewViewProvider('cocodeCreateSession', startSessionProvider)
   );
 
 
