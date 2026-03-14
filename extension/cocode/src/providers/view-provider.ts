@@ -1,24 +1,24 @@
-
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { Answer, Question } from '../types';
 
-
-export class AnswerViewProvider implements vscode.WebviewViewProvider {
+export class ViewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
   private html: string;
   private extensionUri: vscode.Uri;
   private onChooseAnswer: (id: number | null) => void; // id = null means unselecting chosen answer
 
+  private rejoinableSessionCode: number | null = null;
   private answers: Answer[] = [];
   private sessionCode: number | null = null;
   private chosenAnswerId: number | null = null;
   private question: Question | null = null;
 
-  constructor(htmlPath: string, extensionUri: vscode.Uri, onChooseAnswer: (id: number | null) => void) {
+  constructor(htmlPath: string, rejoinableSessionCode: number | null, extensionUri: vscode.Uri, onChooseAnswer: (id: number | null) => void) {
 	  this.html = fs.readFileSync(htmlPath, 'utf-8');
     this.extensionUri = extensionUri;
     this.onChooseAnswer = onChooseAnswer;
+    this.rejoinableSessionCode = rejoinableSessionCode;
   }
 
   resolveWebviewView(webviewView: vscode.WebviewView) {
@@ -28,7 +28,6 @@ export class AnswerViewProvider implements vscode.WebviewViewProvider {
       .asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css'));
 
     webviewView.webview.options = { enableScripts: true };
-    webviewView.webview.html = this._getHtml().replaceAll("{{CODEICONS_URI_MAGICAL_STRING}}", codiconsUri.toString());
 
     let codeCompletionStylesheet = null;
     if (vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark) {
@@ -38,11 +37,17 @@ export class AnswerViewProvider implements vscode.WebviewViewProvider {
     } else {
       codeCompletionStylesheet = "atom-one-dark";
     }
-    webviewView.webview.html = this._getHtml().replaceAll("{{CODE_COMPLETION_STYLESHEET_MAGICAL_STRING}}", codeCompletionStylesheet);
+    webviewView.webview.html = this._getHtml()
+      .replaceAll("{{CODEICONS_URI_MAGICAL_STRING}}", codiconsUri.toString())
+      .replaceAll("{{CODE_COMPLETION_STYLESHEET_MAGICAL_STRING}}", codeCompletionStylesheet);
 
     // Handle messages sent from the webview
     webviewView.webview.onDidReceiveMessage((message) => {
-      if(message.command === 'postQuestion') {
+      if (message.command === 'StartSession') {
+        vscode.commands.executeCommand('cocode.startSession');
+      } else if (message.command === 'RejoinSession') {
+        vscode.commands.executeCommand('cocode.rejoinSession');
+      } else if(message.command === 'postQuestion') {
         vscode.commands.executeCommand('cocode.postQuestion');
       } else if (message.command === 'debug') {
         vscode.window.showInformationMessage(`[WEBVIEW DEBUG]: ${message.msg}`);
@@ -54,21 +59,31 @@ export class AnswerViewProvider implements vscode.WebviewViewProvider {
       } else if (message.command === 'rejectSuggestions') {
         vscode.commands.executeCommand('cocode.rejectSuggestions');
       } else if (message.command === 'deleteSuggestion') {
-        vscode.window.showInformationMessage(`Delete suggestion with id ${message.id}`); // TODO: FELIX implement deleting suggestions
+        vscode.commands.executeCommand('cocode.deleteSuggestion', message.id)
       }
     });
 
     webviewView.onDidChangeVisibility(() => {
-      this.sendSessionCodeToWebview();
-      this.sendAnswersToWebview();
-      this.sendQuestionIdToWebview();
+      this.updateView()
     });
 
+    this.updateView()
+  }
+
+  private updateView() {
+    this.sendRejoinableSessionCodeToWebview();
+    this.sendSessionCodeToWebview();
+    this.sendAnswersToWebview();
+    this.sendQuestionIdToWebview();
+  }
+
+  private sendRejoinableSessionCodeToWebview(): void {
+    this._view?.webview?.postMessage({ command: 'setRejoinableSessionCode', code: this.rejoinableSessionCode })
   }
 
   private sendSessionCodeToWebview(): void {
     if (this._view) {
-      this._view.webview.postMessage({ command: 'setSessionCode', text: this.sessionCode });
+      this._view.webview.postMessage({ command: 'setSessionCode', code: this.sessionCode });
     }
   }
 
@@ -100,7 +115,7 @@ export class AnswerViewProvider implements vscode.WebviewViewProvider {
 
   updateAnswers(answers: Answer[]) {
     this.answers = answers;
-    console.log("Updating answers with current id: ", this.chosenAnswerId);
+    console.log("Updating answers with currently chosen answer id: ", this.chosenAnswerId);
     this.sendAnswersToWebview();
   }
 
@@ -108,6 +123,18 @@ export class AnswerViewProvider implements vscode.WebviewViewProvider {
     this.question = question;
     this.chosenAnswerId = null;
     this.sendQuestionIdToWebview();
+  }
+
+  showAnswerPage() {
+    if (this._view) {
+      this._view.webview.postMessage({ command: 'showAnswerPage' });
+    }
+  }
+
+  showStartSessionPage() {
+    if (this._view) {
+      this._view.webview.postMessage({ command: 'showStartSessionPage' });
+    }
   }
 
   private _getHtml(): string {
