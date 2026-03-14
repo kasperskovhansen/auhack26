@@ -1,7 +1,7 @@
 
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { Answer } from '../types';
+import { Answer, Question } from '../types';
 
 
 export class AnswerViewProvider implements vscode.WebviewViewProvider {
@@ -13,7 +13,7 @@ export class AnswerViewProvider implements vscode.WebviewViewProvider {
   private answers: Answer[] = [];
   private sessionCode: number | null = null;
   private chosenAnswerId: number | null = null;
-  private questionId: number | null = null;
+  private question: Question | null = null;
 
   constructor(htmlPath: string, extensionUri: vscode.Uri, onChooseAnswer: (id: number | null) => void) {
 	  this.html = fs.readFileSync(htmlPath, 'utf-8');
@@ -72,7 +72,8 @@ export class AnswerViewProvider implements vscode.WebviewViewProvider {
     if (this._view) {
       this._view.webview.postMessage({
         command: 'updateQuestion',
-        id: this.questionId
+        id: this.question?.id,
+        language: this.question?.language || "javascript"
       });
     }
   }
@@ -89,8 +90,8 @@ export class AnswerViewProvider implements vscode.WebviewViewProvider {
     this.sendAnswersToWebview();
   }
 
-  updateQuestionId(id: number | null) {
-    this.questionId = id;
+  updateQuestion(question: Question | null) {
+    this.question = question;
     this.chosenAnswerId = null;
     this.sendQuestionIdToWebview();
   }

@@ -1,6 +1,5 @@
 import * as dotenv from "dotenv";
 import * as path from "path";
-// This method is called when your extension is deactivated
 import * as vscode from "vscode";
 
 import { Answer, Question, QuestionPostResult, Session } from "./types";
@@ -86,14 +85,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const apiPollAnswers = async () => {
     const sessionId = context.workspaceState.get("cocodeSessionId", null);
-    const questionId = questionManager.getActiveQuestionId();
+    const question = questionManager.getActiveQuestion();
 
-    if (!sessionId || !questionId) {
+    if (!sessionId || !question) {
       return;
     }
 
     const result = await fetch(
-      `${baseUrl}/api/sessions/${sessionId}/questions/${questionId}/answers`,
+      `${baseUrl}/api/sessions/${sessionId}/questions/${question.id}/answers`,
     );
     answers = (await result.json()) as Answer[];
 
@@ -181,7 +180,7 @@ export async function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      if (questionManager.getActiveQuestionId() !== null) {
+      if (questionManager.getActiveQuestion()) {
         vscode.window.showWarningMessage(
           "There is an active unanswered question",
         );
@@ -189,7 +188,7 @@ export async function activate(context: vscode.ExtensionContext) {
       }
 
       await questionManager.startQuestion(editor);
-      provider.updateQuestionId(questionManager.getActiveQuestionId());
+      provider.updateQuestion(questionManager.getActiveQuestion());
     }),
   );
 
@@ -200,14 +199,14 @@ export async function activate(context: vscode.ExtensionContext) {
         return;
       }
  
-      if (questionManager.getActiveQuestionId() === null) {
+      if (questionManager.getActiveQuestion() === null) {
         vscode.window.showWarningMessage('No active question to end.')
         return;
       }
 
       questionManager.endQuestion()
       answers = [];
-      provider.updateQuestionId(questionManager.getActiveQuestionId())
+      provider.updateQuestion(questionManager.getActiveQuestion())
       provider.updateAnswers([]);
     })
   );

@@ -114,7 +114,7 @@
     Join at: cocode.kasperskov.dev</h2>
     <button id="post-question-btn">Post Question</button>
     <button id="close-question-btn">Close question</button>
-    <h3 style="margin-bottom: 0px">Answers</h3>
+    <h2 id="answers-header" style="margin-bottom: 0px">Answers: <span id="answer-count">0</span></h2>
     <div id="answer-container"></div>
 
 
@@ -132,15 +132,16 @@
 
     let answers = []
     let chosenAnswerId = null
-    let currentQuestionId = null;
-    updateQuestionId(null);
+    let currentQuestionLanguage = null;
+    updateQuestion(null, null);
 
-    function updateQuestionId(id) {
+    function updateQuestion(id, language) {
         vscode.postMessage({ command: 'debug', msg: JSON.stringify(id) })
         currentQuestionId = id
+        currentQuestionLanguage = language 
         document.querySelector('#post-question-btn').disabled = currentQuestionId !== null
         document.querySelector('#close-question-btn').disabled = currentQuestionId === null
-        document.querySelector('h3').hidden = currentQuestionId === null
+        document.querySelector('#answers-header').hidden = currentQuestionId === null
     }
 
     function updateChosenAnswer(id) {
@@ -185,14 +186,16 @@
             element.textContent = event.data.text;
             element.href = `https://cocode.kasperskov.dev/answer?code=${event.data.text}`;
         } else if (event.data.command === "updateQuestion") {
-            updateQuestionId(event.data.id)
+            updateQuestion(event.data.id, event.data.language)
         } else if (event.data.command === "updateAnswers") {
             answers = event.data.answers
         
             const elements = event.data.answers.map(answer => {
                 const elm = document.querySelector('#answer-template').content.firstElementChild.cloneNode(true)
                 elm.id = `answer-${answer.id}`
-                elm.querySelector('.answer-code').textContent = answer.text
+                const codeElement = elm.querySelector('.answer-code');
+                codeElement.textContent = answer.text;
+                codeElement.classList.add(`language-${currentQuestionLanguage}`);
                 elm.addEventListener('click', () => chooseAnswer(answer.id))
                 return elm
             })
@@ -201,6 +204,9 @@
             elements.forEach(elm => container.appendChild(elm))
             updateChosenAnswer(event.data.chosenAnswerId);
             hljs.highlightAll();
+
+            const answerCountElement = document.getElementById('answer-count');
+            answerCountElement.textContent = event.data.answers.length.toString();
         }
     });
 

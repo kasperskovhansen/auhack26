@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 const { getUpdatedRanges } = require('vscode-position-tracking')
 
 type State = {
-    questionId: number;
+    question: Question;
     originalQuestionContent: string;
 
     document: vscode.TextDocument;
@@ -101,7 +101,8 @@ export class QuestionManager {
         const question = {
             content: fullFileContent,
             fromLine: range.start.line + 1, // 1-indexing
-            toLine: range.end.line + 2 // exclusive end line
+            toLine: range.end.line + 2, // exclusive end line
+            language: editor.document.languageId
         }
 
         console.log(question)
@@ -114,7 +115,7 @@ export class QuestionManager {
         )
 
         this.state = {
-            questionId,
+            question: { id: questionId, ...question },
             document: editor.document,
             range: new DynamicRange(fullLineRange, this.onRangeRemoved),
             originalQuestionContent: editor.document.getText(fullLineRange)
@@ -181,8 +182,11 @@ export class QuestionManager {
         this.state = null;
     }
 
-    getActiveQuestionId(): number | null {
-        return this.state?.questionId ?? null
+
+    getActiveQuestion(): Question | null {
+        if (!this.state) return null;
+
+        return this.state.question;
     }
 
     refreshDecorations() {
