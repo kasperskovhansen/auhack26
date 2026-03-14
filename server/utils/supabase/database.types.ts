@@ -49,6 +49,7 @@ export type Database = {
           created_at: string
           from_line: number
           id: number
+          language: string | null
           session_id: number
           to_line: number
         }
@@ -57,6 +58,7 @@ export type Database = {
           created_at?: string
           from_line: number
           id?: number
+          language?: string | null
           session_id: number
           to_line: number
         }
@@ -65,6 +67,7 @@ export type Database = {
           created_at?: string
           from_line?: number
           id?: number
+          language?: string | null
           session_id?: number
           to_line?: number
         }
@@ -108,6 +111,7 @@ export type Database = {
           created_at: string
           from_line: number
           id: number
+          language: string | null
           session_id: number
           to_line: number
         }[]

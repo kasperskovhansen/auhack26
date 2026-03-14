@@ -25,6 +25,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sid
       from_line: question.fromLine,
       to_line: question.toLine,
       session_id: sessionId,
+      language: question.language,
     })
     .select("id")
 
