@@ -40,18 +40,12 @@ export function activate(context: vscode.ExtensionContext) {
       return
     }
     const answer = answers[idx]
-    vscode.window.showInformationMessage(`Chose answer ${answer}`);
+    //vscode.window.showInformationMessage(`Chose answer ${answer}`);
     questionManager.chooseAnswer(answer)
   }
 
-  const onCloseQuestionInPanel = () => {
-    questionManager.endQuestion()
-    answers = [];
-    provider.updateQuestionId(questionManager.getActiveQuestionId())
-    provider.updateAnswers([]);
-  }
 
-  const provider = new AnswerViewProvider(answerViewPath, context.extensionUri, onChooseAnswerInPanel, onCloseQuestionInPanel);
+  const provider = new AnswerViewProvider(answerViewPath, context.extensionUri, onChooseAnswerInPanel);
   const apiPostQuestion = async (question: Omit<Question, "id">) => {
     const sessionId = context.workspaceState.get("cocodeSessionId", null);
     const res = await fetch(`http://localhost:3000/api/sessions/${sessionId}/questions`, {
@@ -95,7 +89,6 @@ export function activate(context: vscode.ExtensionContext) {
     await context.workspaceState.update("cocodeSessionCode", sessionCode);
     
     provider.updateSessionCode(sessionCode);
-    provider.updateAnswers([])
     provider.updateAnswers([])
   };
 
@@ -151,6 +144,25 @@ export function activate(context: vscode.ExtensionContext) {
 
       await questionManager.startQuestion(editor);
       provider.updateQuestionId(questionManager.getActiveQuestionId())
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cocode.closeQuestion', async () => {
+      if (!sessionJoined) {
+        vscode.window.showWarningMessage('No active session')
+        return;
+      }
+ 
+      if (questionManager.getActiveQuestionId() === null) {
+        vscode.window.showWarningMessage('No active question to end.')
+        return;
+      }
+
+      questionManager.endQuestion()
+      answers = [];
+      provider.updateQuestionId(questionManager.getActiveQuestionId())
+      provider.updateAnswers([]);
     })
   );
 
