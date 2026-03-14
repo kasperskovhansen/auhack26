@@ -12,17 +12,6 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
-    "viewsWelcome": [
-      {
-        "view": "cocodeCreateSession",
-        "contents": "[Start Session](command:cocode.startSession)"
-      },
-      {
-        "view": "cocodeCreateSession",
-        "contents": "\n[Rejoin Previous Session](command:cocode.rejoinSession)",
-        "when": "cocode.showRejoin&&!cocode.inSession"
-      }
-    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -37,7 +26,7 @@
         {
           "id": "cocodeCreateSession",
           "name": "Create Session",
-          "type": "tree",
+          "type": "webview",
           "when": "!cocode.inSession"
         },
         {
@@ -64,14 +53,14 @@
     ],
     "menus": {
       "editor/context": [
-          {
-            "command": "cocode.postQuestion",
-            "group": "CoCode",
-            "when": "editorTextFocus"
-          }
-        ]
-      }
-},
+        {
+          "command": "cocode.postQuestion",
+          "group": "CoCode",
+          "when": "editorTextFocus"
+        }
+      ]
+    }
+  },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
@@ -91,6 +80,7 @@
     "typescript-eslint": "^8.56.1"
   },
   "dependencies": {
+    "@vscode/codicons": "^0.0.45",
     "vscode-position-tracking": "^0.1.0"
   }
 }

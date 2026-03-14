@@ -5,26 +5,59 @@ import * as fs from 'fs';
 import { QuestionManager } from './questions';
 
 import {StartSessionViewProvider, MyPanelViewProvider} from './viewproviders';
-import { Session } from './types';
+import { Answer, Session } from './types';
+
+const ANSWER_POLL_TIMEOUT = 5000;
 
 export function activate(context: vscode.ExtensionContext) {
   console.log("CoCode started");
 
   const previousId = context.workspaceState.get("cocodeSessionId", null);
-  vscode.commands.executeCommand('setContext', 'cocode.showRejoin', previousId !== null); 
-  
-    
-  const startSessionProvider = new StartSessionViewProvider();
+  const previousCode = context.workspaceState.get("cocodeSessionCode", null);
+
+  const oldSessionExists = previousId !== null && previousCode !== null;
+  vscode.commands.executeCommand('setContext', 'cocode.showRejoin', oldSessionExists); 
+
+  const startSessionPath = path.join(context.extensionPath, 'media', 'startSession', 'view.html');
+  const startSessionProvider = new StartSessionViewProvider(startSessionPath, oldSessionExists ? previousCode : null);
 
   context.subscriptions.push(
-    vscode.window.registerTreeDataProvider('cocodeCreateSession', startSessionProvider)
+    vscode.window.registerWebviewViewProvider('cocodeCreateSession', startSessionProvider)
   );
 
-
   const htmlPath = path.join(context.extensionPath, 'media', 'view.html');
-  const provider = new MyPanelViewProvider(htmlPath);
 
+
+  let answers: Answer[] = []
+  const onChooseAnswerInPanel = (id: number) => {
+    const idx = answers.findIndex(a => a.id == id)
+    if (idx === -1) {
+      vscode.window.showErrorMessage(`Answer with id ${id} doesn't exist.`);
+      return
+    }
+    const answer = answers[idx]
+    vscode.window.showInformationMessage(`Chose answer ${answer}`);
+    questionManager.chooseAnswer(answer)
+  }
+
+  const provider = new MyPanelViewProvider(htmlPath, context.extensionUri, onChooseAnswerInPanel);
   const questionManager = new QuestionManager(provider, context);
+
+
+  const pollAnswers = async () => {
+    const sessionId = await context.workspaceState.get("cocodeSessionId", null);
+    const questionId = questionManager.getActiveQuestionId()
+
+    if (!sessionId || !questionId) {
+      return
+    }
+
+    const result = await fetch(`http://localhost:3000/api/sessions/${sessionId}/questions/${questionId}/answers`);
+    answers = (await result.json()) as Answer[] 
+
+    provider.updateAnswers(answers)
+  }
+  setInterval(pollAnswers, ANSWER_POLL_TIMEOUT)
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider('cocodeAnswers', provider)
@@ -37,8 +70,8 @@ export function activate(context: vscode.ExtensionContext) {
     await context.workspaceState.update("cocodeSessionId", sessionId);
     await context.workspaceState.update("cocodeSessionCode", sessionCode);
     
-    provider.updateLabel(`Joining session with code: ${sessionCode}`);
-    
+    provider.updateSessionCode(sessionCode);
+    provider.updateAnswers([])
   };
 
   // register command to rejoin previous session
@@ -46,8 +79,6 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('cocode.rejoinSession', () => {
       const sessionId = context.workspaceState.get("cocodeSessionId", null);
       const sessionCode = context.workspaceState.get("cocodeSessionCode", null);
-
-
 
       if (sessionId && sessionCode) {
         joinSession(sessionId, sessionCode);
@@ -83,7 +114,6 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       await questionManager.startQuestion(editor);
-
     })
   );
 
