@@ -53,9 +53,12 @@ export class MyPanelViewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
   private html: string;
   private extensionUri: vscode.Uri;
-  constructor(htmlPath: string, extensionUri: vscode.Uri) {
+  private onChooseAnswer: (id: number) => void;
+
+  constructor(htmlPath: string, extensionUri: vscode.Uri, onChooseAnswer: (id: number) => void) {
 	  this.html = fs.readFileSync(htmlPath, 'utf-8');
     this.extensionUri = extensionUri;
+    this.onChooseAnswer = onChooseAnswer
   }
 
   resolveWebviewView(webviewView: vscode.WebviewView) {
@@ -69,10 +72,10 @@ export class MyPanelViewProvider implements vscode.WebviewViewProvider {
 
     // Handle messages sent from the webview
     webviewView.webview.onDidReceiveMessage((message) => {
-      if (message.command === 'StartSession') {
-        vscode.window.showInformationMessage(`Input: ${message.value}`);
-      } else if (message.command === 'debug') {
+      if (message.command === 'debug') {
         vscode.window.showInformationMessage(`[WEBVIEW DEBUG]: ${message.msg}`);
+      } else if (message.command === 'chooseAnswer') {
+        this.onChooseAnswer(message.id)
       }
     });
   }
