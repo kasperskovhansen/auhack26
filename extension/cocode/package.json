@@ -12,17 +12,6 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
-    "viewsWelcome": [
-      {
-        "view": "cocodeCreateSession",
-        "contents": "[Start Session](command:cocode.startSession)"
-      },
-      {
-        "view": "cocodeCreateSession",
-        "contents": "\n[Rejoin Previous Session](command:cocode.rejoinSession)",
-        "when": "cocode.showRejoin&&!cocode.inSession"
-      }
-    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -37,7 +26,7 @@
         {
           "id": "cocodeCreateSession",
           "name": "Create Session",
-          "type": "tree",
+          "type": "webview",
           "when": "!cocode.inSession"
         },
         {

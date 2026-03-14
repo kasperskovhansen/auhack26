@@ -4,25 +4,58 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { Answer } from './types';
 
-export class StartSessionViewProvider implements vscode.TreeDataProvider<string> {
-  getTreeItem(element: string): vscode.TreeItem {
-    return new vscode.TreeItem(element);
+export class StartSessionViewProvider implements vscode.WebviewViewProvider {
+  private _view?: vscode.WebviewView;
+  private html: string;
+  private sessionCode: number | null;
+  constructor(htmlPath: string, sessionCode: number | null) {
+    this.html = fs.readFileSync(htmlPath, 'utf-8');
+    this.sessionCode = sessionCode;
+  }  
+
+  resolveWebviewView(webviewView: vscode.WebviewView) {
+    this._view = webviewView;
+
+    console.log(`Session code: ${this.sessionCode}`);
+
+    webviewView.webview.options = { enableScripts: true };
+    webviewView.webview.html = this._getHtml();
+
+    webviewView.onDidChangeVisibility(() => this.sendSessionCodeToWebview());
+    this.sendSessionCodeToWebview();
+
+    // Handle messages sent from the webview
+    webviewView.webview.onDidReceiveMessage((message) => {
+      if (message.command === 'StartSession') {
+        console.log(`Tried to start sessoin`);
+        vscode.commands.executeCommand('cocode.startSession');
+      }
+      else if (message.command === 'RejoinSession') {
+        vscode.commands.executeCommand('cocode.rejoinSession');
+      }
+    });
+    
   }
 
-  getChildren(): Thenable<string[]> {
-    return Promise.resolve([]);
+  private sendSessionCodeToWebview(): void {
+    if (this._view) {
+      this._view.webview.postMessage({ command: 'setSessionCode', text: this.sessionCode });
+    } 
   }
+
+  private _getHtml(): string {
+    return this.html;
+  }
+
 }
-
-type OnChooseAnswerClbk = (id: number) => void
 
 export class MyPanelViewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
   private html: string;
   private extensionUri: vscode.Uri;
-  private onChooseAnswer: OnChooseAnswerClbk;
+  private onChooseAnswer: (id: number) => void;
 
-  constructor(htmlPath: string, extensionUri: vscode.Uri, onChooseAnswer: OnChooseAnswerClbk) {
+  constructor(htmlPath: string, extensionUri: vscode.Uri, onChooseAnswer: (id: number) => void) {
 	  this.html = fs.readFileSync(htmlPath, 'utf-8');
     this.extensionUri = extensionUri;
     this.onChooseAnswer = onChooseAnswer
