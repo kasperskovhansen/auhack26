@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
-import IDE from "@/app/components/ide"
+import Answer from '../components/answer';
+// import AutoRefresh from '../components/auto-refresh';
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ code?: number }> }) {
   const { code } = await searchParams;
@@ -21,9 +22,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ c
   }
 
   return (
-    <>      {latestQuestion ?
-      <IDE question={latestQuestion}></IDE>
-      : <div>Loading ...</div>}
+    <>
+      {/* <AutoRefresh interval={2000} /> */}
+      {latestQuestion ?
+        <Answer question={latestQuestion} />
+        : <div>Loading question ...</div>}
     </>
   )
 }

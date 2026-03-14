@@ -1,29 +1,33 @@
-"use client"; import { useEffect, useRef, useState } from 'react';
+"use client";
+import { useEffect, useRef, useState } from 'react';
 
-import Editor, { OnMount } from '@monaco-editor/react';
+import MonacoEditor, { OnMount } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
 import type { Database } from '@/utils/supabase/database.types';
 /* @ts-ignore */
 import { constrainedEditor } from 'constrained-editor-plugin';
 import "./editor-styles.css";
-import { Button } from '@/components/ui/button';
+import { saveAnswerAction } from '../actions';
+import Menubar from './menubar';
 
-export default function IDE({ question }: { question: Database["public"]["Tables"]["Question"]["Row"] }) {
+export default function IDE({ question, onChangeUserAnswer }: { question: Database["public"]["Tables"]["Question"]["Row"], onChangeUserAnswer: (answer: string) => void }) {
   const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
-  const [userAnswer, setUserAnswer] = useState<string>("");
-
   const handleEditorDidMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
     editor.setValue(question.content)
-    setUserAnswer(extractUserAnswer() || "")
+    onChangeUserAnswer(extractUserAnswer() || "")
     const constrainedInstance = constrainedEditor(monaco);
     const model = editor.getModel();
     constrainedInstance.initializeIn(editor);
+    editor.focus()
+    const initialPosition = { lineNumber: question.from_line, column: 1 };
 
     if (model == null) {
       return
     }
 
+    editor.setPosition(initialPosition)
+    editor.revealLineInCenter(question.from_line)
     const totalLines = model.getLineCount();
     if (question.from_line <= question.to_line) {
       const endColumn = model.getLineMaxColumn(question.to_line - 1);
@@ -60,7 +64,7 @@ export default function IDE({ question }: { question: Database["public"]["Tables
   }
 
   function handleChange() {
-    setUserAnswer(extractUserAnswer() || "")
+    onChangeUserAnswer(extractUserAnswer() || "")
   }
   // 1. Calculate the immutable line counts once 
   const initialTotalLines = question.content.split(/\r?\n/).length;
@@ -85,15 +89,10 @@ export default function IDE({ question }: { question: Database["public"]["Tables
     return extractedCode
   };
 
-  const handleSubmit = () => {
-    window.alert(userAnswer)
-  }
 
   return (
     <>
-      <Button className='cursor-pointer' onClick={handleSubmit}>Submit</Button>
-      <Editor
-        height="90vh"
+      <MonacoEditor
         defaultLanguage="javascript"
         onMount={handleEditorDidMount}
         onChange={handleChange}
