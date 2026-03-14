@@ -30,6 +30,16 @@ export class AnswerViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.options = { enableScripts: true };
     webviewView.webview.html = this._getHtml().replaceAll("{{CODEICONS_URI_MAGICAL_STRING}}", codiconsUri.toString());
 
+    let codeCompletionStylesheet = null;
+    if (vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark) {
+      codeCompletionStylesheet = "atom-one-dark";
+    } else if (vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light) {
+      codeCompletionStylesheet = "atom-one-light";
+    } else {
+      codeCompletionStylesheet = "atom-one-dark";
+    }
+    webviewView.webview.html = this._getHtml().replaceAll("{{CODE_COMPLETION_STYLESHEET_MAGICAL_STRING}}", codeCompletionStylesheet);
+
     // Handle messages sent from the webview
     webviewView.webview.onDidReceiveMessage((message) => {
       if(message.command === 'postQuestion') {
