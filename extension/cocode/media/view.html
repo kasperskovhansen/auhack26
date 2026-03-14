@@ -23,6 +23,7 @@
         color: var(--vscode-button-foreground);
         border: none;
         padding: 6px;
+        border-radius: 4px;
         cursor: pointer;
         width: 100%;
     }
@@ -96,6 +97,7 @@
 </head>
 <body>
     <h2>Session code: <a id="session-code-value"></a></h2>
+    <button id="post-question-btn">Post Question</button>
 
     <div id="answer-container">
         
@@ -128,6 +130,11 @@
 
         vscode.postMessage({ command: 'chooseAnswer', id: answers[chosenIdx].id })
     }
+
+    document.getElementById('post-question-btn')
+            .addEventListener('click', () => {
+        vscode.postMessage({ command: 'postQuestion' });
+    });
 
     // Listen for label updates from the extension
     window.addEventListener('message', (event) => {

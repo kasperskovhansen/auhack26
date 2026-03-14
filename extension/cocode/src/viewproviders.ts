@@ -74,7 +74,10 @@ export class MyPanelViewProvider implements vscode.WebviewViewProvider {
 
     // Handle messages sent from the webview
     webviewView.webview.onDidReceiveMessage((message) => {
-      if (message.command === 'debug') {
+      if(message.command === 'postQuestion') {
+        vscode.commands.executeCommand('cocode.postQuestion');
+      }
+      else if (message.command === 'debug') {
         vscode.window.showInformationMessage(`[WEBVIEW DEBUG]: ${message.msg}`);
       } else if (message.command === 'chooseAnswer') {
         this.onChooseAnswer(message.id)
